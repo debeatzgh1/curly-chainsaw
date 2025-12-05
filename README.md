@@ -1,373 +1,123 @@
+                                                      <!doctype html>
+
+
+
+
+Live Preview Button Changer
 <style>
-  /* 🌟 Fade Slide Animation */
-  @keyframes fadeSlideUp {
-    0% { opacity: 0; transform: translateY(0) translateX(20px); }
-    100% { opacity: 1; transform: translateY(0) translateX(0); }
-  }
-
-  /* ❤️ Heartbeat Animation */
-  @keyframes heartbeat {
-    0% { transform: scale(1); }
-    25% { transform: scale(1.08); }
-    50% { transform: scale(1); }
-    75% { transform: scale(1.08); }
-    100% { transform: scale(1); }
-  }
-
-  .floating-btn-group {
-    animation: fadeSlideUp 0.6s ease-out;
-  }
-
-  /* Iframe Modal Styles */
-  #iframe-modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 115%;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(4px);
-  }
-
-  .modal-content {
-    position: relative;
-    margin: 2% auto;
-    background: #fff;
-    border-radius: 16px;
-    width: 95%;
-    height: 90%;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    overflow: hidden;
-    animation: fadeIn 0.3s ease;
-  }
-
-  #modal-iframe {
-    width: 100%;
-    height: 105%;
-    border: none;
-  }
-
-  .close-btn {
-    position: absolute;
-    top: 10px;
-    right: 18px;
-    font-size: 30px;
-    color: #333;
-    cursor: pointer;
-    transition: color 0.2s;
-    z-index: 10;
-  }
-
-  .close-btn:hover {
-    color: #e11d48;
-  }
-
-  @keyframes fadeIn {
-    from {opacity: 0; transform: translateY(-10px);}
-    to {opacity: 1; transform: translateY(0);}
-  }
+body { font-family: Arial,sans-serif; background:#0a0a0a; color:#fff; display:flex; flex-direction:column; align-items:center; padding:20px; }
+h1 { color:#00ff88; text-align:center; margin-bottom:20px; }
+textarea, input[type="text"] { width:100%; max-width:800px; padding:10px; margin-bottom:12px; border-radius:8px; border:1px solid #444; background:#111; color:#fff; font-family:monospace; }
+.button-config { background:#111; padding:15px; border-radius:10px; margin-bottom:15px; width:100%; max-width:800px; }
+.button-config label { display:block; margin-bottom:6px; font-weight:bold; }
+.colors { display:flex; gap:12px; margin-bottom:8px; }
+.colors label { cursor:pointer; display:flex; align-items:center; gap:6px; }
+.colors input[type="radio"] { accent-color:currentColor; }
+button.update-btn { padding:10px 20px; background:#00ff88; border:none; border-radius:8px; cursor:pointer; font-weight:bold; color:#000; margin-bottom:12px; transition:transform .1s; }
+button.update-btn:hover { transform:scale(1.05); }
+pre#output { width:100%; max-width:800px; background:#111; padding:12px; border-radius:8px; border:1px solid #444; white-space:pre-wrap; overflow-wrap:break-word; cursor:pointer; }
+#preview { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:12px; padding:12px; background:#111; border-radius:8px; width:100%; max-width:800px; border:1px solid #444; }
+#preview a { padding:10px 20px; border-radius:8px; color:#000; text-decoration:none; font-weight:bold; }
 </style>
 
+
+
+<h1>Live Preview Button Changer</h1>
+
+<label for="htmlInput">Paste your HTML code here:</label>
+<textarea id="htmlInput" placeholder="Paste your HTML code with 3 buttons here..."></textarea>
+
+<!-- Button Configs -->
+<div class="button-config" data-btn="1">
+  <label>Button 1 URL:</label>
+  <input type="text" class="urlInput" placeholder="https://example.com/1" />
+  <div class="colors">
+    <label><input type="radio" name="color1" value="red" /> Red</label>
+    <label><input type="radio" name="color1" value="yellow" /> Yellow</label>
+    <label><input type="radio" name="color1" value="green" checked /> Green</label>
+  </div>
+</div>
+
+<div class="button-config" data-btn="2">
+  <label>Button 2 URL:</label>
+  <input type="text" class="urlInput" placeholder="https://example.com/2" />
+  <div class="colors">
+    <label><input type="radio" name="color2" value="red" /> Red</label>
+    <label><input type="radio" name="color2" value="yellow" /> Yellow</label>
+    <label><input type="radio" name="color2" value="green" checked /> Green</label>
+  </div>
+</div>
+
+<div class="button-config" data-btn="3">
+  <label>Button 3 URL:</label>
+  <input type="text" class="urlInput" placeholder="https://example.com/3" />
+  <div class="colors">
+    <label><input type="radio" name="color3" value="red" /> Red</label>
+    <label><input type="radio" name="color3" value="yellow" /> Yellow</label>
+    <label><input type="radio" name="color3" value="green" checked /> Green</label>
+  </div>
+</div>
+
+<button class="update-btn" id="updateBtn">Update HTML Script</button>
+
+<h3>Live Preview:</h3>
+<div id="preview">
+  <a href="#" target="_blank" id="previewBtn1">Button 1</a>
+  <a href="#" target="_blank" id="previewBtn2">Button 2</a>
+  <a href="#" target="_blank" id="previewBtn3">Button 3</a>
+</div>
+
+<h3>Updated HTML Script:</h3>
+<pre id="output">Click "Update HTML Script" to generate code here. Click box to copy.</pre>
+
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+const htmlInput = document.getElementById('htmlInput');
+const updateBtn = document.getElementById('updateBtn');
+const output = document.getElementById('output');
 
-  // 🔹 Floating Button at TOP-LEFT
-  const btnGroup = document.createElement("div");
-  btnGroup.className = "floating-btn-group";
-  Object.assign(btnGroup.style, {
-    position: "fixed",
-    top: "20px",          // Top-left positioning
-    left: "20px",
-    zIndex: "9999",
-    animation: "heartbeat 2.5s infinite ease-in-out, fadeSlideUp 0.6s ease-out forwards"
-  });
+const previewBtn1 = document.getElementById('previewBtn1');
+const previewBtn2 = document.getElementById('previewBtn2');
+const previewBtn3 = document.getElementById('previewBtn3');
 
-  // -------------------------------------------------------
-  // 📌 Updates Button
-  // -------------------------------------------------------
-  const button = document.createElement("a");
-  button.href = "#";
-  button.innerText = "📌 Updates";
-  Object.assign(button.style, {
-    background: "#16a34a",
-    color: "#fff",
-    padding: "12px 24px",
-    borderRadius: "30px",
-    textDecoration: "none",
-    fontSize: "15px",
-    fontWeight: "700",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
-    whiteSpace: "nowrap",
-  });
+function updatePreviewAndHTML(){
+  let html = htmlInput.value;
 
-  // 🔹 Iframe Modal
-  const modal = document.createElement("div");
-  modal.id = "iframe-modal";
-  modal.innerHTML = `
-    <div class="modal-content">
-      <span class="close-btn">&times;</span>
-      <iframe id="modal-iframe" src="" loading="lazy"></iframe>
-    </div>
-  `;
+  for(let i=1;i<=3;i++){
+    const btnConfig = document.querySelector(`.button-config[data-btn="${i}"]`);
+    const url = btnConfig.querySelector('.urlInput').value.trim() || '#';
+    const color = btnConfig.querySelector(`input[name="color${i}"]:checked`).value;
 
-  document.body.appendChild(modal);
+    // Update live preview buttons
+    const previewBtn = document.getElementById(`previewBtn${i}`);
+    previewBtn.href = url;
+    previewBtn.style.background = color;
 
-  // 🔹 Open Iframe on click
-  button.addEventListener("click", function (e) {
-    e.preventDefault();
-    document.getElementById("modal-iframe").src = "https://msha.ke/debeatzgh";
-    modal.style.display = "block";
-  });
+    // Replace URLs in HTML
+    const regexUrl = new RegExp(`(href|src)=(["'])(.*?button${i}.*?)\\2`, 'gi');
+    html = html.replace(regexUrl, `$1="$2${url}$2`);
 
-  btnGroup.appendChild(button);
-  document.body.appendChild(btnGroup);
+    // Replace inline background colors in HTML
+    const regexColor = new RegExp(`(button\\s*\\#?button${i}.*?)(background\\s*:\\s*.*?;?)`,'gi');
+    html = html.replace(regexColor, `$1background:${color};`);
 
-  // 🔹 Close Modal
-  document.addEventListener("click", function (e) {
-    if (e.target.classList.contains("close-btn") || e.target.id === "iframe-modal") {
-      modal.style.display = "none";
-      document.getElementById("modal-iframe").src = "";
-    }
-  });
+    // Replace color class names if any
+    const regexClass = new RegExp(`(class\\s*=\\s*["'][^"']*button${i}-)(red|yellow|green)([^"']*["'])`, 'gi');
+    html = html.replace(regexClass, `$1${color}$3`);
+  }
 
-  // 🔹 Auto-open external ads in a new tab
-  document.getElementById("modal-iframe").addEventListener("load", function () {
-    try {
-      const links = this.contentDocument.querySelectorAll("a");
-      links.forEach(link => {
-        if (!link.href.includes("debeatzgh.wordpress.com")) {
-          link.setAttribute("target", "_blank");
-          link.setAttribute("rel", "noopener");
-        }
-      });
-    } catch (err) {
-      console.warn("External site - cannot rewrite links");
-    }
-  });
+  output.textContent = html;
+}
 
+updateBtn.addEventListener('click', updatePreviewAndHTML);
+
+// Copy output on click
+output.addEventListener('click', () => {
+  navigator.clipboard.writeText(output.textContent).then(()=>alert('Updated HTML copied to clipboard!'));
 });
 </script>
 
 
-# **👋 Hi, I'm David (DebeatzGH)**
-
-### *AI Tools Builder • UI/UX Creator • Digital Products Developer • Tech Blogger*
-
-<p align="center">
-  <img src="https://debeatzgh.wordpress.com/wp-content/uploads/2025/12/imagine_15462143230908918843052169799993526.jpg" width="140" style="border-radius:50%">
-</p>
-
----
-
-# **📚 Mini Blog Post Library (10–20 Posts)**
-
-### *A curated collection of my tutorials, ideas, tools & UI/UX content*
-
----
-
-## **📝 1. The Future of AI Tools for Creators**
-
-A breakdown of how creators can build income streams using micro automations, AI templates, and workflow tools.
-
----
-
-## **📝 2. 10 Profitable AI Side Hustles You Can Start Today**
-
-Easy-to-launch tech ideas for beginners, students, and creators using free and low-cost tools.
-
----
-
-## **📝 3. How to Build a Micro SaaS Using Only AI Tools**
-
-Step-by-step guide showing the workflow from idea → branding → landing page → automation.
-
----
-
-## **📝 4. UI/UX Widgets That Boost Landing Page Conversion**
-
-Top-performing design components with clean HTML/CSS examples.
-
----
-
-## **📝 5. My Weekly AI Tool Stack for Productivity & Design**
-
-The exact tools I use for automation, editing, research, and content.
-
----
-
-## **📝 6. How to Create Stunning Animated Buttons Using CSS**
-
-A detailed mini tutorial for developers who want to add playful micro-interactions.
-
----
-
-## **📝 7. Building Your First Online Digital Product Shop**
-
-A clean strategy showing setup, pricing, branding, and why GitHub Pages is perfect.
-
----
-
-## **📝 8. AI Prompts That Help Students & Creators Work Faster**
-
-A powerful list of prompts for writing, research, video scripts, and UI design.
-
----
-
-## **📝 9. Why Every Creator Needs a GitHub Pages Portfolio**
-
-A full explanation of how GitHub Pages can be used as a free website builder.
-
----
-
-## **📝 10. 5 UI Layouts You Can Copy for Your Next Project**
-
-Minimal, modern layouts with headers, hero sections, and CTA examples.
-
----
-
-## **📝 11. A Creator’s Guide to Automating Repetitive Tasks**
-
-Examples of tasks you can fully automate using AI + browser workflows.
-
----
-
-## **📝 12. How to Package & Sell Templates as Digital Products**
-
-A structured guide for designing, pricing, packaging, and promoting digital assets.
-
----
-
-## **📝 13. My Ultimate Blogging Starter Toolkit**
-
-Includes writing prompts, content templates, SEO tips, and automation hacks.
-
----
-
-## **📝 14. Turning Your Slides Into Professional Videos Automatically**
-
-Explains your slide-to-video AI tool concept and the workflow behind it.
-
----
-
-## **📝 15. UI/UX Mistakes Most Beginners Make (And How to Fix Them)**
-
-A simple way to redesign poor layouts into clean modern interfaces.
-
----
-
-## **📝 16. 20 GitHub Projects Every Beginner Should Try**
-
-A curated list to help students and new developers build real skills.
-
----
-
-## **📝 17. Creating a Brand Identity Using Only AI Tools**
-
-How to build logos, color palettes, typefaces, and mockups with free tools.
-
----
-
-## **📝 18. Unlocking the Power of GitHub for Non-Coders**
-
-Teaches beginners how to use GitHub for blogging, documentation, and websites.
-
----
-
-## **📝 19. Why Every UI/UX Designer Should Post on LinkedIn**
-
-Explains LinkedIn growth strategy with practical weekly posting ideas.
-
----
-
-## **📝 20. How to Build Your First Mini SaaS From 0 → 1**
-
-A complete beginner-friendly guide for your audience.
-
----
-
-# **🎨 What I Create**
-
-I design and build:
-
-* 🎨 **UI/UX Widgets**
-* 🖥 **Mini Landing Pages**
-* 🤖 **AI Tools & Automation Workflows**
-* 📝 **Tech + Side Hustle Tutorials**
-* 🎬 **Short Dev Videos**
-
----
-
-# **🧰 Tech Stack**
-
-<p align="center">
-<img src="https://img.shields.io/badge/HTML-FF4B23?style=for-the-badge&logo=html5&logoColor=white"/>
-<img src="https://img.shields.io/badge/CSS-254BDD?style=for-the-badge&logo=css3&logoColor=white"/>
-<img src="https://img.shields.io/badge/JavaScript-FCDC00?style=for-the-badge&logo=javascript&logoColor=black"/>
-<img src="https://img.shields.io/badge/AI_Tools-6A00FF?style=for-the-badge&logo=openai&logoColor=white"/>
-<img src="https://img.shields.io/badge/GitHub_Pages-000000?style=for-the-badge&logo=githubpages&logoColor=white"/>
-</p>
-
----
-
-# **⭐ Featured Projects**
-
-### 🔹 Side Hustle Starter Kit
-
-👉 [https://debeatzgh1.github.io/Side-hustle-starter-kit-/](https://debeatzgh1.github.io/Side-hustle-starter-kit-/)
-
-### 🔹 Curated AI Business & Product Guides
-
-👉 [https://debeatzgh1.github.io/Curated-Guides-for-Online-Business-AI-Product-Creation/](https://debeatzgh1.github.io/Curated-Guides-for-Online-Business-AI-Product-Creation/)
-
-### 🔹 Digital Products Affiliate Shop
-
-👉 [https://debeatzgh1.github.io/-My-Brand-Online-Digital-Products-Affiliate-Shop/](https://debeatzgh1.github.io/-My-Brand-Online-Digital-Products-Affiliate-Shop/)
-
----
-
-# **📬 Connect With Me**
-
-<p align="center">
-  <a href="https://www.linkedin.com/in/david-kumah-ab7392299">
-    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"/>
-  </a>
-  <a href="https://debeatzgh1.github.io/">
-    <img src="https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=githubpages&logoColor=white"/>
-  </a>
-  <a href="https://beatzde4.blogspot.com/">
-    <img src="https://img.shields.io/badge/Blog-FF5722?style=for-the-badge&logo=blogger&logoColor=white"/>
-  </a>
-</p>
-
----
-
-# **🎯 Need a Custom UI, Landing Page, or AI Tool?**
-
-<p align="center">
-  <a href="https://docs.google.com/forms/d/e/1FAIpQLSec8llbmfgq_2cVxpdk0M9zi2BtNUT4_IjqFVkbM1RCApV3Gw/viewform?usp=publish-editor">
-    <img src="https://img.shields.io/badge/Order%20a%20Custom%20Design-6C63FF?style=for-the-badge"/>
-  </a>
-</p>
-
----
-
-
----
-
-# 📂 Blogger Scripts Catalog
-
-![Blogger Scripts Catalog Cover](https://debeatzgh.wordpress.com/wp-content/uploads/2025/08/designacleanmodernthumbnailforabloggerproductscarouseltool1711994558720457535.jpg)
-
-A curated collection of **Blogger-friendly scripts, widgets, and templates** — designed to improve your blog’s design, engagement, and user experience.
-Each project comes with a **live GitHub Pages demo**, thumbnail, and quick action button so you can see the script in action.
-
----
-
-## 🚀 Live Catalog
-
-| Thumbnail                                                                                                                                                                                                                                                  | Project                                                                                                                                                      | Description                                                                                                         | Action                                                                                                           |
+</!doctype>                                                                                                                                                   | Project                                                                                                                                                      | Description                                                                                                         | Action                                                                                                           |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | ![Custom Blogger Theme](https://debeatzgh.wordpress.com/wp-content/uploads/2025/08/generateamobile-firstresponsivebloggertemplatewithcustomizablecolorsfontsandsections1576324612066211977.jpg)                                                            | **[Custom Blogger Theme with Dynamic Post Loading and Logo](https://debeatzgh1.github.io/Custom-Blogger-Theme-for-with-Dynamic-Post-Loading-and-Logo-/)**    | A responsive, mobile-first Blogger theme with customizable sections, dynamic post loading, and custom logo support. | [🔗 View Demo](https://debeatzgh1.github.io/Custom-Blogger-Theme-for-with-Dynamic-Post-Loading-and-Logo-/)       |
 | ![Popup Generator](https://debeatzgh.wordpress.com/wp-content/uploads/2025/08/createatoolthatgeneratesiframeorcard-styleembedsforindividualbloggerpostscompletewiththumbnailtitleandreadmorebuttonforcross-blogpromotion754077096311972631.jpg)            | **[Popup HTML Page Generator](https://debeatzgh1.github.io/popup-html-page-generator-blogger/)**                                                             | Easily generate iframe or card-style embeds for individual Blogger posts with thumbnails and read-more buttons.     | [🔗 View Demo](https://debeatzgh1.github.io/popup-html-page-generator-blogger/)                                  |
